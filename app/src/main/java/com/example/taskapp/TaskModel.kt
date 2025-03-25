@@ -1,9 +1,10 @@
 package com.example.taskapp
 
 import java.sql.Date
+import java.util.UUID
 
 data class TaskModel(
-    var id: String? = null,
+    var id: Int? = null,
     var title: String? = null,
     var description: String? = null,
     var dueDate: String? = null,

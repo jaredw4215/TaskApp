@@ -35,72 +35,17 @@ class MainActivity : AppCompatActivity() {
         sqliteManager = SQLiteManager(this)
 
         binding.fab.setOnClickListener { view ->
-            //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-            //    .setAction("Action", null)
-            //    .setAnchorView(R.id.fab).show()
             val addTaskView = AddTaskView(this, linearLayout, sqliteManager)
             addTaskView.show()
 
         }
 
-
         val tasks = sqliteManager.getAllTasks()
         for (task in tasks) {
-            addTaskToScreen(this, linearLayout, task, sqliteManager)
+            AddTaskView.addTaskToScreen(this, linearLayout, task, sqliteManager)
+            println(task.id)
         }
 
-    }
-    companion object {
-        fun addTaskToScreen(context: Context, screen: LinearLayout, model: TaskModel, sqliteManager: SQLiteManager) {
-            val taskView = TaskView(context)
-            taskView.title.text = model.title
-            taskView.dueDate.text = model.dueDate
-            taskView.priority.text = model.priority
-            taskView.category.text = model.category
-            taskView.isCompleted.isChecked = model.isCompleted
-            if (taskView.isCompleted.isChecked) {
-                taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.gray_400))
-            }else{
-                taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.white))
-            }
-            taskView.isCompleted.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.gray_400))
-                    model.isCompleted = true
-                } else {
-                    taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.white))
-                    model.isCompleted = false
-                }
-                sqliteManager.updateTask(model)
-            }
-            taskView.menu.setOnClickListener {
-                val popupMenu = PopupMenu(context, taskView.menu)
-                popupMenu.inflate(R.menu.menu_task)
-                popupMenu.setOnMenuItemClickListener {
-                    when (it.itemId) {
-                        R.id.item1 -> {
-                            val editTaskView = EditTaskView(context, taskView, model)
-                            editTaskView.show()
-                            true
-                        }
-
-                        R.id.item2 -> {
-                            deleteTask(taskView, screen, model, sqliteManager)
-                            true
-                        }
-
-                        else -> false
-                    }
-                }
-                popupMenu.show()
-            }
-            screen.addView(taskView)
-        }
-        fun deleteTask(view: TaskView, screen: LinearLayout, model: TaskModel, sqliteManager: SQLiteManager) {
-            sqliteManager.deleteTask(model)
-            screen.removeView(view)
-
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

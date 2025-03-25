@@ -5,14 +5,14 @@ import android.graphics.Paint
 import android.text.SpannableString
 import android.text.style.StrikethroughSpan
 import android.util.AttributeSet
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 
-class TaskView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
-) : CardView(context, attrs) {
+class TaskView : CardView {
 
     lateinit var root: CardView
     lateinit var title: TextView
@@ -22,12 +22,21 @@ class TaskView @JvmOverloads constructor(
     lateinit var category: TextView
     lateinit var menu: ImageView
 
-    init {
+    constructor(context: Context) : super(context) {
+        init(context)
+    }
+
+    constructor(context: Context, attrs: AttributeSet?) : super(context,attrs) {
+        init(context)
+    }
+
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context,attrs,defStyleAttr){
         init(context)
     }
 
     private fun init(context: Context) {
-        inflate(context, R.layout.task_view, this)
+        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        LayoutInflater.from(context).inflate(R.layout.task_view, this, true)
         root = findViewById(R.id.tv_root)
         title = findViewById(R.id.tv_title)
         dueDate = findViewById(R.id.tv_dueDate)

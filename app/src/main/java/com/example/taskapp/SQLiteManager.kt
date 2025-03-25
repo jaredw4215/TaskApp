@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper
 class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME, null, DATABASE_VERSION){
     override fun onCreate(p0: SQLiteDatabase?) {
         val createTable = "CREATE TABLE $TABLE_TASKS (" +
-                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                ID + " INTEGER PRIMARY KEY, " +
                 TITLE + " TEXT, " +
                 DESCRIPTION + " TEXT, " +
                 DUE_DATE + " TEXT, " +
@@ -92,7 +92,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME,
             db.execSQL(selectQuery)
             return mutableListOf()
         }
-        var id: String
+        var id: Int
         var title: String
         var description: String
         var dueDate: String
@@ -101,7 +101,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME,
         var category: String
         if (cursor.moveToFirst()) {
             do {
-                id = cursor.getString(cursor.getColumnIndexOrThrow(ID))
+                id = cursor.getInt(cursor.getColumnIndexOrThrow(ID))
                 title = cursor.getString(cursor.getColumnIndexOrThrow(TITLE))
                 description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION))
                 dueDate = cursor.getString(cursor.getColumnIndexOrThrow(DUE_DATE))
