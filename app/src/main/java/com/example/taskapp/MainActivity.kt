@@ -1,49 +1,46 @@
 package com.example.taskapp
 
-import android.content.Context
 import android.os.Bundle
-import android.graphics.Paint
-import android.text.SpannableString
-import android.text.style.StrikethroughSpan
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.LinearLayout
-import android.widget.PopupMenu
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.taskapp.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var linearLayout: LinearLayout
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: TaskAdapter
     private lateinit var sqliteManager: SQLiteManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        // Set the content view using the binding object
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
+        // Set the toolbar as the action bar
         setSupportActionBar(binding.toolbar)
 
-        linearLayout = findViewById<LinearLayout>(R.id.linearlayout)
+        // Initialize the SQLiteManager and get all tasks from the database
         sqliteManager = SQLiteManager(this)
+        val tasks = sqliteManager.getAllTasks()
+        val sortedTasks = tasks.sortedBy { it.priority }
 
+        // Set up the RecyclerView and adapter
+        recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.setHasFixedSize(true)
+        adapter = TaskAdapter(this)
+        recyclerView.adapter = adapter
+        adapter.submitList(sortedTasks)
+
+        // Set up the FAB to open the AddTaskView
         binding.fab.setOnClickListener { view ->
-            val addTaskView = AddTaskView(this, linearLayout, sqliteManager)
+            val addTaskView = AddTaskView(adapter, this)
             addTaskView.show()
 
-        }
-
-        val tasks = sqliteManager.getAllTasks()
-        for (task in tasks) {
-            AddTaskView.addTaskToScreen(this, linearLayout, task, sqliteManager)
-            println(task.id)
         }
 
     }
@@ -59,8 +56,19 @@ class MainActivity : AppCompatActivity() {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_clear_screen -> {
+                deleteAllTasks()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun deleteAllTasks(){
+        // Delete all tasks from the database and the screen
+        val tasks = sqliteManager.getAllTasks()
+        for (task in tasks) {
+            adapter.deleteTask(task)
         }
     }
 }

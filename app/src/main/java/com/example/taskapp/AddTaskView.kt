@@ -2,39 +2,47 @@ package com.example.taskapp
 
 import android.app.Dialog
 import android.content.Context
-import android.util.AttributeSet
 import android.view.Window
-import android.widget.CheckBox
-import android.widget.LinearLayout
-import android.widget.PopupMenu
+import android.widget.CalendarView
+import android.widget.ImageButton
 import android.widget.RadioGroup
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import java.util.UUID
 
-class AddTaskView(context: Context, screen: LinearLayout, sqliteManager: SQLiteManager){
-    val dialog = Dialog(context)
+class AddTaskView(screen: TaskAdapter, context: Context){
+    private val dialog = Dialog(context)
+    private val sqliteManager = SQLiteManager(context)
     init {
-        init(context, screen, sqliteManager)
+        init(screen, context)
     }
-    private fun init(context: Context, screen: LinearLayout, sqliteManager: SQLiteManager) {
+    private fun init(screen: TaskAdapter, context: Context) {
         // Set up the dialog
+        dialog.window?.requestFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(true)
         dialog.setContentView(R.layout.add_task_view)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         val title = dialog.findViewById<TextView>(R.id.atv_title)
         val description = dialog.findViewById<TextView>(R.id.atv_description)
         val date = dialog.findViewById<TextView>(R.id.atv_date)
+        val datePicker = dialog.findViewById<ImageButton>(R.id.imageButton)
         val priority = dialog.findViewById<RadioGroup>(R.id.atv_priority_options)
         val category = dialog.findViewById<TextView>(R.id.atv_category)
         val submit = dialog.findViewById<TextView>(R.id.atv_submit)
         val cancel = dialog.findViewById<TextView>(R.id.atv_cancel)
-
+        // Set the date picker listener to update the date field when a date is selected
+        datePicker.setOnClickListener {
+            loadCalendarView(context, date)
+        }
         // Set the listeners for the cancel and submit buttons
         cancel.setOnClickListener {
             dialog.dismiss()
         }
         submit.setOnClickListener {
+            // Check if the title field is empty and show an error message if it is
+            if (title.text.toString().isEmpty()) {
+                title.error = "Please enter a title"
+                return@setOnClickListener
+            }
             // Create a new task model with the values from the dialog fields
             val model = TaskModel(
                 id = UUID.randomUUID().hashCode(),
@@ -47,7 +55,10 @@ class AddTaskView(context: Context, screen: LinearLayout, sqliteManager: SQLiteM
 
             // Add the new task to the database and the screen
             sqliteManager.insertTask(model)
-            addTaskToScreen(context, screen, model, sqliteManager)
+            val tasks = sqliteManager.getAllTasks()
+            val sortedTasks = tasks.sortedBy { it.priority }
+            screen.submitList(sortedTasks)
+            //screen.addTask(model)
             dialog.dismiss()
         }
 
@@ -55,102 +66,37 @@ class AddTaskView(context: Context, screen: LinearLayout, sqliteManager: SQLiteM
 
     fun show() { dialog.show() }
 
-    private fun getPriorityChecked(priority: RadioGroup): String {
-        var selectedPriority = "Low"
+    private fun getPriorityChecked(priority: RadioGroup): Int {
+        var selectedPriority = 3
         if (priority.checkedRadioButtonId == R.id.atv_priority_high) {
-            selectedPriority = "High"
+            selectedPriority = 1
         }
         else if (priority.checkedRadioButtonId == R.id.atv_priority_med) {
-            selectedPriority = "Medium"
+            selectedPriority = 2
         }
         return selectedPriority
 
     }
 
-    companion object {
-        fun addTaskToScreen(
-            context: Context,
-            screen: LinearLayout,
-            model: TaskModel,
-            sqliteManager: SQLiteManager
-        ) {
-            // Create a new task view and set its properties with the values from the task model
-            val taskView = TaskView(context)
-            taskView.title.text = model.title
-            taskView.dueDate.text = model.dueDate
-            taskView.priority.text = model.priority
-            taskView.category.text = model.category
-            taskView.isCompleted.isChecked = model.isCompleted
+    private fun loadCalendarView(context: Context, date: TextView) {
+        val datePickerDialog = Dialog(context)
+        datePickerDialog.window?.requestFeature(Window.FEATURE_NO_TITLE)
+        datePickerDialog.setCancelable(true)
+        datePickerDialog.setContentView(R.layout.calendar_view)
+        val datePickerView = datePickerDialog.findViewById<CalendarView>(R.id.calendarView)
 
-            // Update the task view's background color based on its completion status
-            updateTaskBackground(taskView, model, model.isCompleted)
-            taskView.isCompleted.setOnCheckedChangeListener { _, isChecked ->
-                // Update the task model's completion status when the checkbox is checked or unchecked
-                updateTaskBackground(taskView, model, isChecked)
-                sqliteManager.updateTask(model)
+        datePickerView.setOnDateChangeListener { _, year, month, dayOfMonth ->
+            date.text = buildString {
+                append(month+1)
+                append("/")
+                append(dayOfMonth)
+                append("/")
+                append(year)
             }
-            taskView.menu.setOnClickListener {
-                // Show a popup menu with options to edit and delete the task
-                val popupMenu = createPopup(context, taskView, model, sqliteManager, screen)
-                popupMenu.show()
-            }
-            screen.addView(taskView)
+            datePickerDialog.dismiss()
         }
 
-        private fun createPopup(
-            context: Context,
-            taskView: TaskView,
-            model: TaskModel,
-            sqliteManager: SQLiteManager,
-            screen: LinearLayout
-        ): PopupMenu {
-            // Create a popup menu with options to edit and delete the task
-            val popupMenu = PopupMenu(context, taskView.menu)
-            popupMenu.inflate(R.menu.menu_task)
-            popupMenu.setOnMenuItemClickListener {
-                when (it.itemId) {
-                    R.id.item1 -> {
-                        // Show the edit task view when the edit option is selected
-                        val editTaskView = EditTaskView(context, taskView, model, sqliteManager)
-                        editTaskView.show()
-                        true
-                    }
-
-                    R.id.item2 -> {
-                        // Delete the task when the delete option is selected
-                        deleteTask(taskView, screen, model, sqliteManager)
-                        true
-                    }
-
-                    else -> false
-                }
-            }
-            return popupMenu
-        }
-
-        private fun updateTaskBackground(taskView: TaskView, model: TaskModel, isChecked: Boolean) {
-            if (isChecked) {
-                // Set the background color of the task view to gray if it is completed
-                taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.gray_400))
-                model.isCompleted = true
-            } else {
-                // Set the background color of the task view to white if it is not completed
-                taskView.root.setCardBackgroundColor(taskView.resources.getColor(R.color.white))
-                model.isCompleted = false
-            }
-        }
-
-        private fun deleteTask(
-            view: TaskView,
-            screen: LinearLayout,
-            model: TaskModel,
-            sqliteManager: SQLiteManager
-        ) {
-            // Delete the task from the database and the screen when the delete option is selected
-            sqliteManager.deleteTask(model)
-            screen.removeView(view)
-
-        }
+        datePickerDialog.show()
     }
 
 }

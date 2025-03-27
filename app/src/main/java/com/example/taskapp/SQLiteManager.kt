@@ -14,7 +14,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME,
                 DESCRIPTION + " TEXT, " +
                 DUE_DATE + " TEXT, " +
                 IS_COMPLETED + " INTEGER, " +
-                PRIORITY + " TEXT, " +
+                PRIORITY + " INTEGER, " +
                 CATEGORY + " TEXT)"
         p0?.execSQL(createTable)
     }
@@ -97,7 +97,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME,
         var description: String
         var dueDate: String
         var isCompleted: Boolean
-        var priority: String
+        var priority: Int
         var category: String
         if (cursor.moveToFirst()) {
             do {
@@ -106,7 +106,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper (context, DATABASE_NAME,
                 description = cursor.getString(cursor.getColumnIndexOrThrow(DESCRIPTION))
                 dueDate = cursor.getString(cursor.getColumnIndexOrThrow(DUE_DATE))
                 isCompleted = cursor.getInt(cursor.getColumnIndexOrThrow(IS_COMPLETED)) == 1
-                priority = cursor.getString(cursor.getColumnIndexOrThrow(PRIORITY))
+                priority = cursor.getInt(cursor.getColumnIndexOrThrow(PRIORITY))
                 category = cursor.getString(cursor.getColumnIndexOrThrow(CATEGORY))
                 val task = TaskModel(id, title, description, dueDate, isCompleted, priority, category)
                 taskList.add(task)
